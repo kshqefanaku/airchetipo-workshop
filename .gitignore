@@ -11,3 +11,8 @@ yarn-error.log*
 prisma/migrations
 .vercel
 *.tsbuildinfo
+.claude/
+.agents/
+.opencode/
+.github/
+.gemini/
