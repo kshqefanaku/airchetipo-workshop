@@ -17,6 +17,7 @@ export default function SignIn() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -30,6 +31,12 @@ export default function SignIn() {
     const supabase = createClient();
 
     if (isSignUp) {
+      if (password !== confirmPassword) {
+        setError("Le password non coincidono.");
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -98,6 +105,21 @@ export default function SignIn() {
               />
             </div>
 
+            {isSignUp && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="confirmPassword">Conferma Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+            )}
+
             {error && (
               <p className="text-destructive text-sm">{error}</p>
             )}
@@ -122,6 +144,7 @@ export default function SignIn() {
                 setIsSignUp(!isSignUp);
                 setError(null);
                 setMessage(null);
+                setConfirmPassword("");
               }}
               className="text-primary underline underline-offset-4"
             >
