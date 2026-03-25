@@ -18,3 +18,81 @@ model User {
 
   @@map("users")
 }
+
+model Card {
+  id         String   @id @default(uuid())
+  scryfallId String   @unique
+  name       String
+  manaCost   String?
+  cmc        Float
+  typeLine   String
+  oracleText String?
+  imageUri   String?
+  colors     String[]
+  setCode    String
+  rarity     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([name])
+  @@map("cards")
+}
+
+model Archetype {
+  id        String         @id @default(uuid())
+  name      String         @unique
+  slug      String         @unique
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  snapshots MetaSnapshot[]
+  decklists Decklist[]
+
+  @@map("archetypes")
+}
+
+enum DeckSection {
+  MAIN
+  SIDEBOARD
+}
+
+model Decklist {
+  id          String          @id @default(uuid())
+  archetypeId String
+  source      String          @default("mtggoldfish")
+  sourceUrl   String          @unique
+  playerName  String?
+  eventName   String?
+  eventDate   DateTime?
+  needsReview Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  archetype   Archetype       @relation(fields: [archetypeId], references: [id])
+  entries     DecklistEntry[]
+
+  @@index([archetypeId])
+  @@map("decklists")
+}
+
+model DecklistEntry {
+  id         String      @id @default(uuid())
+  decklistId String
+  cardName   String
+  quantity   Int
+  section    DeckSection
+  decklist   Decklist    @relation(fields: [decklistId], references: [id], onDelete: Cascade)
+
+  @@index([decklistId])
+  @@map("decklist_entries")
+}
+
+model MetaSnapshot {
+  id          String    @id @default(uuid())
+  archetypeId String
+  metaShare   Float
+  source      String    @default("mtggoldfish")
+  scrapedAt   DateTime  @default(now())
+  archetype   Archetype @relation(fields: [archetypeId], references: [id])
+
+  @@index([archetypeId, scrapedAt])
+  @@map("meta_snapshots")
+}

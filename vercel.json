@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/scraper/cards",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/scraper/meta",
+      "schedule": "0 */8 * * *"
+    },
+    {
+      "path": "/api/scraper/decklists",
+      "schedule": "30 */8 * * *"
+    }
+  ]
+}

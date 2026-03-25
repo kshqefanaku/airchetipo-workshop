@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MTGtester — Modern Meta Analysis Platform</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    /* ── Landing Page Styles ── */
+    body {
+      background: var(--bg-deep);
+    }
+
+    /* ── Top Navigation ── */
+    .top-nav {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 48px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .top-nav-left {
+      display: flex;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .nav-logo .logo-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--primary), #7c8cf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.875rem;
+      color: white;
+    }
+
+    .nav-logo span {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.125rem;
+      color: var(--text-heading);
+      letter-spacing: -0.03em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-links a {
+      padding: 8px 14px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+    }
+
+    .nav-links a:hover {
+      color: var(--text-primary);
+      background: var(--bg-muted);
+    }
+
+    .top-nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* ── Hero Section ── */
+    .hero {
+      padding: 80px 48px 96px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 64px;
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -120px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(79, 110, 247, 0.06) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      left: -80px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.04) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      flex: 1;
+      max-width: 540px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 99px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      font-family: var(--font-body);
+      margin-bottom: 24px;
+    }
+
+    .hero-badge svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--text-heading);
+      margin-bottom: 20px;
+      letter-spacing: -0.03em;
+    }
+
+    .hero h1 .accent {
+      background: linear-gradient(135deg, var(--primary), #7c8cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: 1.125rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      max-width: 460px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .hero-actions .btn-primary {
+      padding: 14px 32px;
+      font-size: 1rem;
+      border-radius: var(--radius-md);
+    }
+
+    .hero-actions .btn-secondary {
+      padding: 14px 24px;
+      font-size: 1rem;
+    }
+
+    .hero-visual {
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Preview Card (Hero) ── */
+    .preview-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      box-shadow: var(--shadow-elevated);
+      position: relative;
+    }
+
+    .preview-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .preview-card-title {
+      font-family: var(--font-display);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--text-heading);
+    }
+
+    .preview-card-badge {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 99px;
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .preview-deck-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .preview-deck-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-deep);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+
+    .preview-deck-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .preview-deck-rank {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      width: 20px;
+    }
+
+    .preview-deck-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-heading);
+    }
+
+    .preview-deck-colors {
+      display: flex;
+      gap: 4px;
+    }
+
+    .preview-deck-meta {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .preview-deck-meta .up {
+      color: var(--green);
+    }
+
+    .preview-deck-meta .down {
+      color: var(--red);
+    }
+
+    /* Floating accent element */
+    .preview-float {
+      position: absolute;
+      top: -16px;
+      right: -16px;
+      width: 80px;
+      height: 80px;
+      background: var(--primary-light);
+      border-radius: var(--radius-xl);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border);
+    }
+
+    .preview-float svg {
+      width: 32px;
+      height: 32px;
+      color: var(--primary);
+    }
+
+    /* ── Social Proof Strip ── */
+    .social-proof {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 32px 48px;
+    }
+
+    .social-proof-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 64px;
+    }
+
+    .proof-stat {
+      text-align: center;
+    }
+
+    .proof-stat-value {
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-heading);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .proof-stat-label {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .proof-divider {
+      width: 1px;
+      height: 40px;
+      background: var(--border);
+    }
+
+    /* ── Features Section ── */
+    .features {
+      padding: 80px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .section-header h2 {
+      font-size: 2rem;
+      margin-bottom: 12px;
+    }
+
+    .section-header p {
+      font-size: 1.0625rem;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: all var(--transition-normal);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .feature-card:hover {
+      box-shadow: var(--shadow-elevated);
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .feature-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .feature-icon.blue {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .feature-icon.green {
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .feature-icon.gold {
+      background: var(--gold-light);
+      color: var(--gold);
+    }
+
+    .feature-card h3 {
+      font-size: 1.125rem;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      font-size: 0.9375rem;
+      line-height: 1.65;
+    }
+
+    /* ── Data Showcase (Matchup Matrix) ── */
+    .data-showcase {
+      padding: 80px 48px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-showcase-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .showcase-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .showcase-text h2 {
+      font-size: 2rem;
+      margin-bottom: 16px;
+    }
+
+    .showcase-text p {
+      font-size: 1rem;
+      margin-bottom: 24px;
+      line-height: 1.7;
+    }
+
+    .showcase-features {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .showcase-feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .showcase-feature-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      margin-top: 7px;
+      flex-shrink: 0;
+    }
+
+    .showcase-feature-item span {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .showcase-matrix {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+
+    .matrix-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .matrix-header h4 {
+      font-family: var(--font-display);
+      font-size: 0.9375rem;
+      color: var(--text-heading);
+    }
+
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: 140px repeat(5, 1fr);
+      font-size: 0.8125rem;
+    }
+
+    .matrix-cell {
+      padding: 12px 8px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+
+    .matrix-cell:last-child {
+      border-right: none;
+    }
+
+    .matrix-cell.header {
+      background: var(--bg-muted);
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .matrix-cell.row-label {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-heading);
+      background: var(--bg-surface);
+      padding-left: 16px;
+    }
+
+    .matrix-cell.favorable {
+      background: var(--green-light);
+      color: var(--green);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .matrix-cell.unfavorable {
+      background: var(--red-light);
+      color: var(--red);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .matrix-cell.even {
+      background: var(--bg-muted);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .matrix-cell.mirror {
+      background: var(--bg-deep);
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    .matrix-row:last-child .matrix-cell {
+      border-bottom: none;
+    }
+
+    /* ── CTA Section ── */
+    .cta-section {
+      padding: 80px 48px;
+      text-align: center;
+      background: linear-gradient(135deg, #e8edfe 0%, #ede9fe 50%, #e8edfe 100%);
+    }
+
+    .cta-inner {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .cta-section h2 {
+      font-size: 2rem;
+      margin-bottom: 16px;
+      color: var(--text-heading);
+    }
+
+    .cta-section p {
+      font-size: 1.0625rem;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      line-height: 1.7;
+    }
+
+    .cta-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .cta-actions .btn {
+      padding: 14px 32px;
+      font-size: 1rem;
+    }
+
+    .btn-white {
+      background: var(--bg-surface);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      font-weight: 600;
+    }
+
+    .btn-white:hover {
+      background: var(--bg-card);
+      box-shadow: var(--shadow-elevated);
+      color: var(--primary);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      background: var(--bg-muted);
+      border-top: 1px solid var(--border);
+      padding: 48px;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .footer-logo .logo-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--primary), #7c8cf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.75rem;
+      color: white;
+    }
+
+    .footer-logo span {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.9375rem;
+      color: var(--text-heading);
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+
+    .footer-links a:hover {
+      color: var(--text-primary);
+    }
+
+    .footer-copy {
+      font-size: 0.8125rem;
+      color: var(--text-dim);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .hero {
+        flex-direction: column;
+        padding: 48px 24px 64px;
+        gap: 40px;
+      }
+      .hero-content, .hero-visual {
+        max-width: 100%;
+      }
+      .hero h1 {
+        font-size: 2.25rem;
+      }
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+      .showcase-layout {
+        grid-template-columns: 1fr;
+      }
+      .social-proof-inner {
+        flex-wrap: wrap;
+        gap: 32px;
+      }
+      .proof-divider {
+        display: none;
+      }
+      .top-nav {
+        padding: 0 24px;
+      }
+      .features, .data-showcase, .cta-section, .footer {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+      .footer-inner {
+        flex-direction: column;
+        gap: 24px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <div class="top-nav-left">
+      <a href="index.html" class="nav-logo">
+        <div class="logo-icon">M</div>
+        <span>MTGtester</span>
+      </a>
+      <div class="nav-links">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="meta.html">Meta Analysis</a>
+        <a href="decks.html">Decks</a>
+      </div>
+    </div>
+    <div class="top-nav-right">
+      <a href="#" class="btn btn-ghost btn-sm">Log In</a>
+      <a href="#" class="btn btn-primary btn-sm">Sign Up Free</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content animate-in">
+      <div class="hero-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Modern Format Analysis
+      </div>
+      <h1>Predict Tomorrow's Meta.<br><span class="accent">Win Today.</span></h1>
+      <p class="hero-subtitle">
+        AI-powered metagame analysis for Magic: The Gathering Modern. Track deck performance, explore matchup data, and gain a competitive edge before your next tournament.
+      </p>
+      <div class="hero-actions">
+        <a href="dashboard.html" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Get Started
+        </a>
+        <a href="meta.html" class="btn btn-secondary">
+          Explore the Meta
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-visual animate-in animate-in-2">
+      <div class="preview-card">
+        <div class="preview-float">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="preview-card-header">
+          <span class="preview-card-title">Top Modern Decks</span>
+          <span class="preview-card-badge">Live Data</span>
+        </div>
+        <div class="preview-deck-list">
+          <div class="preview-deck-item">
+            <div class="preview-deck-info">
+              <span class="preview-deck-rank">1</span>
+              <div>
+                <div class="preview-deck-name">Boros Energy</div>
+                <div class="preview-deck-colors">
+                  <span class="color-pip R"></span>
+                  <span class="color-pip W"></span>
+                </div>
+              </div>
+            </div>
+            <div class="preview-deck-meta">
+              14.2% <span class="up">+1.8</span>
+            </div>
+          </div>
+          <div class="preview-deck-item">
+            <div class="preview-deck-info">
+              <span class="preview-deck-rank">2</span>
+              <div>
+                <div class="preview-deck-name">Jeskai Control</div>
+                <div class="preview-deck-colors">
+                  <span class="color-pip U"></span>
+                  <span class="color-pip R"></span>
+                  <span class="color-pip W"></span>
+                </div>
+              </div>
+            </div>
+            <div class="preview-deck-meta">
+              11.7% <span class="up">+0.9</span>
+            </div>
+          </div>
+          <div class="preview-deck-item">
+            <div class="preview-deck-info">
+              <span class="preview-deck-rank">3</span>
+              <div>
+                <div class="preview-deck-name">Golgari Yawgmoth</div>
+                <div class="preview-deck-colors">
+                  <span class="color-pip B"></span>
+                  <span class="color-pip G"></span>
+                </div>
+              </div>
+            </div>
+            <div class="preview-deck-meta">
+              9.3% <span class="down">-0.5</span>
+            </div>
+          </div>
+          <div class="preview-deck-item">
+            <div class="preview-deck-info">
+              <span class="preview-deck-rank">4</span>
+              <div>
+                <div class="preview-deck-name">Amulet Titan</div>
+                <div class="preview-deck-colors">
+                  <span class="color-pip G"></span>
+                </div>
+              </div>
+            </div>
+            <div class="preview-deck-meta">
+              7.8% <span class="up">+2.1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Social Proof Strip -->
+  <section class="social-proof">
+    <div class="social-proof-inner">
+      <div class="proof-stat animate-in animate-in-3">
+        <div class="proof-stat-value">125K+</div>
+        <div class="proof-stat-label">Matches Analyzed</div>
+      </div>
+      <div class="proof-divider"></div>
+      <div class="proof-stat animate-in animate-in-4">
+        <div class="proof-stat-value">340+</div>
+        <div class="proof-stat-label">Tracked Archetypes</div>
+      </div>
+      <div class="proof-divider"></div>
+      <div class="proof-stat animate-in animate-in-5">
+        <div class="proof-stat-value">Weekly</div>
+        <div class="proof-stat-label">Meta Updates</div>
+      </div>
+      <div class="proof-divider"></div>
+      <div class="proof-stat animate-in animate-in-6">
+        <div class="proof-stat-value">89%</div>
+        <div class="proof-stat-label">Prediction Accuracy</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="section-header animate-in">
+      <h2>Everything You Need to Win</h2>
+      <p>Data-driven insights that give you a real competitive advantage at your next Modern event.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card animate-in animate-in-2">
+        <div class="feature-icon blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        </div>
+        <h3>Meta Breakdown</h3>
+        <p>Real-time metagame share percentages across all Modern archetypes. See what people are playing and how the meta shifts week to week.</p>
+      </div>
+
+      <div class="feature-card animate-in animate-in-3">
+        <div class="feature-icon green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <h3>Matchup Matrix</h3>
+        <p>Detailed win-rate data for every archetype pairing. Know your favorable and unfavorable matchups before you sit down to play.</p>
+      </div>
+
+      <div class="feature-card animate-in animate-in-4">
+        <div class="feature-icon gold">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Trend Predictions</h3>
+        <p>AI-powered forecasting identifies rising and falling archetypes. Prepare your 75 for the metagame of next week, not last week.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Data Showcase -->
+  <section class="data-showcase">
+    <div class="data-showcase-inner">
+      <div class="showcase-layout">
+        <div class="showcase-text animate-in">
+          <h2>Know Every Matchup</h2>
+          <p>Our matchup matrix distills thousands of match results into clear, actionable win-rate data. No more guessing whether your deck is favored.</p>
+          <div class="showcase-features">
+            <div class="showcase-feature-item">
+              <div class="showcase-feature-dot"></div>
+              <span>Win rates calculated from verified tournament results</span>
+            </div>
+            <div class="showcase-feature-item">
+              <div class="showcase-feature-dot"></div>
+              <span>Color-coded cells for instant readability</span>
+            </div>
+            <div class="showcase-feature-item">
+              <div class="showcase-feature-dot"></div>
+              <span>Updated weekly with the latest event data</span>
+            </div>
+            <div class="showcase-feature-item">
+              <div class="showcase-feature-dot"></div>
+              <span>Filter by time range, event type, and skill level</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="showcase-matrix animate-in animate-in-2">
+          <div class="matrix-header">
+            <h4>Matchup Win Rates</h4>
+            <span class="badge badge-blue">Last 30 Days</span>
+          </div>
+          <div class="matrix-grid">
+            <!-- Header row -->
+            <div class="matrix-cell header"></div>
+            <div class="matrix-cell header">Boros</div>
+            <div class="matrix-cell header">Jeskai</div>
+            <div class="matrix-cell header">Yawg.</div>
+            <div class="matrix-cell header">Amulet</div>
+            <div class="matrix-cell header">Murkt.</div>
+
+            <!-- Row 1: Boros Energy -->
+            <div class="matrix-cell row-label">Boros Energy</div>
+            <div class="matrix-cell mirror">50</div>
+            <div class="matrix-cell favorable">55.2</div>
+            <div class="matrix-cell unfavorable">44.8</div>
+            <div class="matrix-cell favorable">58.1</div>
+            <div class="matrix-cell even">50.3</div>
+
+            <!-- Row 2: Jeskai Control -->
+            <div class="matrix-cell row-label">Jeskai Control</div>
+            <div class="matrix-cell unfavorable">44.8</div>
+            <div class="matrix-cell mirror">50</div>
+            <div class="matrix-cell favorable">56.7</div>
+            <div class="matrix-cell favorable">53.2</div>
+            <div class="matrix-cell unfavorable">47.1</div>
+
+            <!-- Row 3: Yawgmoth -->
+            <div class="matrix-cell row-label">Yawgmoth</div>
+            <div class="matrix-cell favorable">55.2</div>
+            <div class="matrix-cell unfavorable">43.3</div>
+            <div class="matrix-cell mirror">50</div>
+            <div class="matrix-cell favorable">61.4</div>
+            <div class="matrix-cell favorable">54.9</div>
+
+            <!-- Row 4: Amulet Titan -->
+            <div class="matrix-cell row-label">Amulet Titan</div>
+            <div class="matrix-cell unfavorable">41.9</div>
+            <div class="matrix-cell unfavorable">46.8</div>
+            <div class="matrix-cell unfavorable">38.6</div>
+            <div class="matrix-cell mirror">50</div>
+            <div class="matrix-cell favorable">57.3</div>
+
+            <!-- Row 5: Murktide -->
+            <div class="matrix-cell row-label">Murktide</div>
+            <div class="matrix-cell even">49.7</div>
+            <div class="matrix-cell favorable">52.9</div>
+            <div class="matrix-cell unfavorable">45.1</div>
+            <div class="matrix-cell unfavorable">42.7</div>
+            <div class="matrix-cell mirror">50</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="cta-inner animate-in">
+      <h2>Ready to Level Up Your Game?</h2>
+      <p>Join thousands of Modern players who use MTGtester to prepare for tournaments, track the metagame, and make smarter deckbuilding decisions.</p>
+      <div class="cta-actions">
+        <a href="dashboard.html" class="btn btn-primary">
+          Start Analyzing
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="meta.html" class="btn btn-white">View Live Meta</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <a href="index.html" class="footer-logo">
+        <div class="logo-icon">M</div>
+        <span>MTGtester</span>
+      </a>
+      <div class="footer-links">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="meta.html">Meta</a>
+        <a href="decks.html">Decks</a>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+      </div>
+      <span class="footer-copy">2026 MTGtester. All rights reserved.</span>
+    </div>
+  </footer>
+
+</body>
+</html>

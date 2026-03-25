@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meta Analysis - MTGtester</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    /* ── Filter Bar ── */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-lg);
+      flex-wrap: wrap;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .time-range-group {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-muted);
+      padding: 3px;
+      border-radius: var(--radius-sm);
+    }
+
+    .time-range-btn {
+      padding: 5px 12px;
+      border: none;
+      background: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .time-range-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-card-hover);
+    }
+
+    .time-range-btn.active {
+      background: var(--bg-surface);
+      color: var(--text-heading);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filter-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
+    }
+
+    .filter-meta {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-left: auto;
+    }
+
+    /* ── Meta Chart ── */
+    .meta-chart {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+      height: 220px;
+      padding: var(--space-lg) var(--space-sm) 60px;
+      position: relative;
+    }
+
+    .meta-chart::before {
+      content: '';
+      position: absolute;
+      bottom: 56px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .meta-bar-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      position: relative;
+      min-width: 0;
+    }
+
+    .meta-bar-value {
+      font-family: var(--font-mono);
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      white-space: nowrap;
+    }
+
+    .meta-bar {
+      width: 100%;
+      max-width: 48px;
+      border-radius: 4px 4px 0 0;
+      position: relative;
+      transition: all var(--transition-normal);
+      cursor: pointer;
+    }
+
+    .meta-bar:hover {
+      filter: brightness(0.92);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .meta-bar-name {
+      position: absolute;
+      bottom: -56px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-45deg);
+      transform-origin: top left;
+      font-family: var(--font-mono);
+      font-size: 0.625rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      letter-spacing: -0.01em;
+    }
+
+    /* Bar colors — soft pastel mana gradients on light bg */
+    .bar-boros { background: linear-gradient(to top, #fca5a5, #fde68a); }
+    .bar-simic { background: linear-gradient(to top, #93c5fd, #86efac); }
+    .bar-goryos { background: linear-gradient(to top, #d4d4d8, #fca5a5); }
+    .bar-izzet { background: linear-gradient(to top, #93c5fd, #fca5a5); }
+    .bar-living-end { background: linear-gradient(to top, #d4d4d8, #fca5a5, #86efac); }
+    .bar-simic-t { background: linear-gradient(to top, #86efac, #93c5fd); }
+    .bar-golgari { background: linear-gradient(to top, #d4d4d8, #86efac); }
+    .bar-colorless { background: linear-gradient(to top, #e2e8f0, #cbd5e1); }
+    .bar-storm { background: linear-gradient(to top, #93c5fd, #fca5a5); }
+    .bar-rhinos { background: linear-gradient(to top, #fca5a5, #86efac, #93c5fd); }
+    .bar-burn { background: linear-gradient(to top, #f87171, #fca5a5); }
+    .bar-others { background: linear-gradient(to top, #e2e8f0, #f1f5f9); }
+
+    /* ── Predictions Panel ── */
+    .predictions-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .predictions-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light), transparent);
+    }
+
+    .predictions-panel::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(ellipse at top center, rgba(217,119,6,0.03), transparent 70%);
+      pointer-events: none;
+    }
+
+    .prediction-item {
+      padding: var(--space-md) 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 1;
+    }
+
+    .prediction-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .prediction-item:first-of-type {
+      padding-top: 0;
+    }
+
+    .prediction-text {
+      font-size: 0.8125rem;
+      color: var(--text-primary);
+      margin-bottom: var(--space-sm);
+      line-height: 1.5;
+    }
+
+    .prediction-confidence {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .prediction-confidence-label {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      min-width: 32px;
+    }
+
+    .confidence-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-muted);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .confidence-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.8s var(--ease-out);
+    }
+
+    .confidence-fill.primary { background: var(--primary); }
+    .confidence-fill.gold { background: var(--gold); }
+    .confidence-fill.green { background: var(--green); }
+    .confidence-fill.dim { background: var(--text-dim); }
+
+    .prediction-confidence-pct {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .prediction-confidence-pct.text-primary-accent { color: var(--primary); }
+    .prediction-confidence-pct.text-gold { color: var(--gold); }
+    .prediction-confidence-pct.text-green { color: var(--green); }
+    .prediction-confidence-pct.text-dim { color: var(--text-dim); }
+
+    /* ── Matchup Matrix ── */
+    .matchup-matrix {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 3px;
+    }
+
+    .matchup-matrix th {
+      padding: 8px 6px;
+      font-size: 0.625rem;
+      text-transform: none;
+      letter-spacing: 0;
+      border-bottom: none;
+      text-align: center;
+      white-space: nowrap;
+      color: var(--text-secondary);
+    }
+
+    .matchup-matrix th.row-header {
+      text-align: right;
+      padding-right: 12px;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .matchup-matrix td {
+      padding: 0;
+      border-bottom: none;
+    }
+
+    .matchup-matrix tr:hover td {
+      background: none;
+    }
+
+    /* ── Two Column Layout ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: var(--space-lg);
+    }
+
+    /* ── Section title ── */
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-heading);
+      margin-bottom: var(--space-md);
+    }
+
+    .forecast-headline {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--gold);
+      margin-bottom: var(--space-md);
+    }
+
+    /* ── Archetype link ── */
+    .archetype-link {
+      color: var(--text-primary);
+      font-weight: 600;
+      transition: color var(--transition-fast);
+    }
+
+    .archetype-link:hover {
+      color: var(--primary);
+    }
+
+    /* ── Header Row ── */
+    .page-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-lg);
+      flex-wrap: wrap;
+      gap: var(--space-md);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-logo">
+        <div class="logo-icon">M</div>
+        <span>MTGtester</span>
+      </a>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Navigation</div>
+        <a href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="meta.html" class="active">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Meta Analysis
+        </a>
+        <a href="decks.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+          My Decks
+        </a>
+        <a href="deck-builder.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Deck Builder
+        </a>
+      </nav>
+
+      <div class="sidebar-user">
+        <div class="avatar">MR</div>
+        <div class="user-info">
+          <div class="user-name">Marco R.</div>
+          <div class="user-email">marco@email.com</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- Header Row -->
+      <div class="page-header-row animate-in animate-in-1">
+        <h1 style="font-size: 1.75rem;">Meta Analysis</h1>
+        <div class="tabs">
+          <button class="tab active">Current Meta</button>
+          <button class="tab">Trends</button>
+          <button class="tab">Predictions</button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar animate-in animate-in-2">
+        <div class="time-range-group">
+          <button class="time-range-btn">7d</button>
+          <button class="time-range-btn active">14d</button>
+          <button class="time-range-btn">30d</button>
+          <button class="time-range-btn">90d</button>
+        </div>
+        <div class="filter-divider"></div>
+        <span class="badge badge-blue">MTGGoldfish</span>
+        <span class="filter-meta">Last updated: <span class="font-mono">2h ago</span></span>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="grid-3 animate-in animate-in-3" style="margin-bottom: var(--space-lg);">
+        <div class="stat-card cyan">
+          <div class="stat-label">Total Archetypes</div>
+          <div class="stat-value font-mono">47</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-label">Top Deck Share</div>
+          <div class="stat-value font-mono">14.2%</div>
+          <div style="margin-top: var(--space-sm); font-size: 0.6875rem; color: var(--text-secondary);">Boros Energy</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Meta Diversity Index</div>
+          <div class="stat-value font-mono">0.82</div>
+          <span class="badge badge-green" style="margin-top: var(--space-sm);">Healthy</span>
+        </div>
+      </div>
+
+      <!-- Meta Share Distribution Chart -->
+      <div class="chart-container animate-in animate-in-4" style="margin-bottom: var(--space-lg);">
+        <div class="chart-header">
+          <div class="chart-title">Meta Share Distribution</div>
+          <span class="text-xs text-secondary font-mono">Top 12 archetypes</span>
+        </div>
+        <div class="meta-chart">
+          <!-- Boros Energy 14.2% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">14.2%</div>
+            <div class="meta-bar bar-boros" style="height: 66%;"></div>
+            <div class="meta-bar-name">Boros Energy</div>
+          </div>
+          <!-- Nadu Combo 11.8% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">11.8%</div>
+            <div class="meta-bar bar-simic" style="height: 55%;"></div>
+            <div class="meta-bar-name">Nadu Combo</div>
+          </div>
+          <!-- Goryo's Vengeance 8.5% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">8.5%</div>
+            <div class="meta-bar bar-goryos" style="height: 40%;"></div>
+            <div class="meta-bar-name">Goryo's Vengeance</div>
+          </div>
+          <!-- Murktide Regent 7.2% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">7.2%</div>
+            <div class="meta-bar bar-izzet" style="height: 33%;"></div>
+            <div class="meta-bar-name">Murktide Regent</div>
+          </div>
+          <!-- Living End 6.9% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">6.9%</div>
+            <div class="meta-bar bar-living-end" style="height: 32%;"></div>
+            <div class="meta-bar-name">Living End</div>
+          </div>
+          <!-- Amulet Titan 5.4% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">5.4%</div>
+            <div class="meta-bar bar-simic-t" style="height: 25%;"></div>
+            <div class="meta-bar-name">Amulet Titan</div>
+          </div>
+          <!-- Yawgmoth Combo 5.1% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">5.1%</div>
+            <div class="meta-bar bar-golgari" style="height: 24%;"></div>
+            <div class="meta-bar-name">Yawgmoth Combo</div>
+          </div>
+          <!-- Tron 4.8% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">4.8%</div>
+            <div class="meta-bar bar-colorless" style="height: 22%;"></div>
+            <div class="meta-bar-name">Tron</div>
+          </div>
+          <!-- Storm 3.9% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">3.9%</div>
+            <div class="meta-bar bar-storm" style="height: 18%;"></div>
+            <div class="meta-bar-name">Storm</div>
+          </div>
+          <!-- Rhinos 3.5% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">3.5%</div>
+            <div class="meta-bar bar-rhinos" style="height: 16%;"></div>
+            <div class="meta-bar-name">Rhinos</div>
+          </div>
+          <!-- Burn 3.2% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">3.2%</div>
+            <div class="meta-bar bar-burn" style="height: 15%;"></div>
+            <div class="meta-bar-name">Burn</div>
+          </div>
+          <!-- Others 21.5% -->
+          <div class="meta-bar-wrapper">
+            <div class="meta-bar-value">21.5%</div>
+            <div class="meta-bar bar-others" style="height: 100%;"></div>
+            <div class="meta-bar-name">Others</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two Column: Rankings + Predictions -->
+      <div class="two-col animate-in animate-in-5" style="margin-bottom: var(--space-lg);">
+
+        <!-- Left: Archetype Rankings -->
+        <div>
+          <div class="section-title">Archetype Rankings</div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Archetype</th>
+                  <th>Colors</th>
+                  <th>Meta %</th>
+                  <th>Change</th>
+                  <th>Prediction</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">1</td>
+                  <td><a href="archetype.html" class="archetype-link">Boros Energy</a></td>
+                  <td><div class="color-identity"><span class="color-pip R"></span><span class="color-pip W"></span></div></td>
+                  <td class="font-mono">14.2%</td>
+                  <td><span class="stat-change up">+1.3%</span></td>
+                  <td><span class="prediction stable"><span class="prediction-arrow">&#8594;</span></span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">2</td>
+                  <td><a href="archetype.html" class="archetype-link">Nadu Combo</a></td>
+                  <td><div class="color-identity"><span class="color-pip U"></span><span class="color-pip G"></span></div></td>
+                  <td class="font-mono">11.8%</td>
+                  <td><span class="stat-change up">+2.1%</span></td>
+                  <td><span class="prediction rising"><span class="prediction-arrow">&#8599;</span></span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">3</td>
+                  <td><a href="archetype.html" class="archetype-link">Goryo's Vengeance</a></td>
+                  <td><div class="color-identity"><span class="color-pip B"></span><span class="color-pip R"></span></div></td>
+                  <td class="font-mono">8.5%</td>
+                  <td><span class="stat-change down">-0.8%</span></td>
+                  <td><span class="prediction falling"><span class="prediction-arrow">&#8600;</span></span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">4</td>
+                  <td><a href="archetype.html" class="archetype-link">Murktide Regent</a></td>
+                  <td><div class="color-identity"><span class="color-pip U"></span><span class="color-pip R"></span></div></td>
+                  <td class="font-mono">7.2%</td>
+                  <td><span class="stat-change down">-0.4%</span></td>
+                  <td><span class="prediction stable"><span class="prediction-arrow">&#8594;</span></span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">5</td>
+                  <td><a href="archetype.html" class="archetype-link">Living End</a></td>
+                  <td><div class="color-identity"><span class="color-pip B"></span><span class="color-pip R"></span><span class="color-pip G"></span></div></td>
+                  <td class="font-mono">6.9%</td>
+                  <td><span class="stat-change up">+1.0%</span></td>
+                  <td><span class="prediction rising"><span class="prediction-arrow">&#8599;</span></span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">6</td>
+                  <td><a href="archetype.html" class="archetype-link">Amulet Titan</a></td>
+                  <td><div class="color-identity"><span class="color-pip U"></span><span class="color-pip G"></span></div></td>
+                  <td class="font-mono">5.4%</td>
+                  <td><span class="stat-change down">-0.3%</span></td>
+                  <td><span class="prediction stable"><span class="prediction-arrow">&#8594;</span></span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">7</td>
+                  <td><a href="archetype.html" class="archetype-link">Yawgmoth Combo</a></td>
+                  <td><div class="color-identity"><span class="color-pip B"></span><span class="color-pip G"></span></div></td>
+                  <td class="font-mono">5.1%</td>
+                  <td><span class="stat-change up">+0.6%</span></td>
+                  <td><span class="prediction rising"><span class="prediction-arrow">&#8599;</span></span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">8</td>
+                  <td><a href="archetype.html" class="archetype-link">Tron</a></td>
+                  <td><div class="color-identity"><span class="color-pip" style="background: var(--mana-C);"></span></div></td>
+                  <td class="font-mono">4.8%</td>
+                  <td><span class="stat-change down">-0.5%</span></td>
+                  <td><span class="prediction falling"><span class="prediction-arrow">&#8600;</span></span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: Meta Predictions -->
+        <div>
+          <div class="section-title">Meta Predictions</div>
+          <div class="predictions-panel">
+            <div class="forecast-headline">Next 2 Weeks Forecast</div>
+
+            <div class="prediction-item">
+              <div class="prediction-text">Nadu Combo will overtake Boros Energy as #1</div>
+              <div class="prediction-confidence">
+                <span class="prediction-confidence-label">Conf.</span>
+                <div class="confidence-bar">
+                  <div class="confidence-fill primary" style="width: 72%;"></div>
+                </div>
+                <span class="prediction-confidence-pct font-mono text-primary-accent">72%</span>
+              </div>
+            </div>
+
+            <div class="prediction-item">
+              <div class="prediction-text">Goryo's Vengeance drops out of top 3</div>
+              <div class="prediction-confidence">
+                <span class="prediction-confidence-label">Conf.</span>
+                <div class="confidence-bar">
+                  <div class="confidence-fill gold" style="width: 65%;"></div>
+                </div>
+                <span class="prediction-confidence-pct font-mono text-gold">65%</span>
+              </div>
+            </div>
+
+            <div class="prediction-item">
+              <div class="prediction-text">Living End rises to top 4</div>
+              <div class="prediction-confidence">
+                <span class="prediction-confidence-label">Conf.</span>
+                <div class="confidence-bar">
+                  <div class="confidence-fill green" style="width: 58%;"></div>
+                </div>
+                <span class="prediction-confidence-pct font-mono text-green">58%</span>
+              </div>
+            </div>
+
+            <div class="prediction-item">
+              <div class="prediction-text">Storm re-enters top 10</div>
+              <div class="prediction-confidence">
+                <span class="prediction-confidence-label">Conf.</span>
+                <div class="confidence-bar">
+                  <div class="confidence-fill dim" style="width: 41%;"></div>
+                </div>
+                <span class="prediction-confidence-pct font-mono text-dim">41%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini Matchup Matrix -->
+      <div class="chart-container animate-in animate-in-6">
+        <div class="chart-header">
+          <div class="chart-title">Matchup Matrix (Top 5)</div>
+          <span class="text-xs text-secondary">Win % from row's perspective</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="matchup-matrix">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Boros Energy</th>
+                <th>Nadu Combo</th>
+                <th>Goryo's</th>
+                <th>Murktide</th>
+                <th>Living End</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th class="row-header">Boros Energy</th>
+                <td><div class="matchup-cell mirror font-mono">50%</div></td>
+                <td><div class="matchup-cell unfavorable font-mono">43%</div></td>
+                <td><div class="matchup-cell favorable font-mono">58%</div></td>
+                <td><div class="matchup-cell favorable font-mono">56%</div></td>
+                <td><div class="matchup-cell even font-mono">48%</div></td>
+              </tr>
+              <tr>
+                <th class="row-header">Nadu Combo</th>
+                <td><div class="matchup-cell favorable font-mono">57%</div></td>
+                <td><div class="matchup-cell mirror font-mono">50%</div></td>
+                <td><div class="matchup-cell even font-mono">52%</div></td>
+                <td><div class="matchup-cell favorable font-mono">60%</div></td>
+                <td><div class="matchup-cell unfavorable font-mono">42%</div></td>
+              </tr>
+              <tr>
+                <th class="row-header">Goryo's</th>
+                <td><div class="matchup-cell unfavorable font-mono">42%</div></td>
+                <td><div class="matchup-cell even font-mono">48%</div></td>
+                <td><div class="matchup-cell mirror font-mono">50%</div></td>
+                <td><div class="matchup-cell favorable font-mono">62%</div></td>
+                <td><div class="matchup-cell favorable font-mono">57%</div></td>
+              </tr>
+              <tr>
+                <th class="row-header">Murktide</th>
+                <td><div class="matchup-cell unfavorable font-mono">44%</div></td>
+                <td><div class="matchup-cell unfavorable font-mono">40%</div></td>
+                <td><div class="matchup-cell unfavorable font-mono">38%</div></td>
+                <td><div class="matchup-cell mirror font-mono">50%</div></td>
+                <td><div class="matchup-cell favorable font-mono">59%</div></td>
+              </tr>
+              <tr>
+                <th class="row-header">Living End</th>
+                <td><div class="matchup-cell even font-mono">52%</div></td>
+                <td><div class="matchup-cell favorable font-mono">58%</div></td>
+                <td><div class="matchup-cell unfavorable font-mono">43%</div></td>
+                <td><div class="matchup-cell unfavorable font-mono">41%</div></td>
+                <td><div class="matchup-cell mirror font-mono">50%</div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</body>
+</html>

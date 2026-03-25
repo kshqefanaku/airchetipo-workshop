@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Decks — MTGtester</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    /* ── Decks page-specific styles ── */
+
+    .header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: var(--space-xl);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: var(--space-sm);
+      flex-shrink: 0;
+    }
+
+    /* ── Filter / Sort Bar ── */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      margin-bottom: var(--space-xl);
+      flex-wrap: wrap;
+    }
+
+    .filter-bar .search-input-wrapper {
+      width: 260px;
+      flex-shrink: 0;
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-muted);
+      padding: 3px;
+      border-radius: var(--radius-md);
+      margin-left: auto;
+    }
+
+    .view-toggle button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 30px;
+      border-radius: var(--radius-sm);
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .view-toggle button:hover {
+      color: var(--text-primary);
+    }
+
+    .view-toggle button.active {
+      background: var(--bg-surface);
+      color: var(--text-heading);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .view-toggle button svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ── Deck Card ── */
+    .deck-card {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+      padding: 0;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      transition: all var(--transition-normal);
+      overflow: hidden;
+    }
+
+    .deck-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--primary);
+      box-shadow: var(--shadow-focus), var(--shadow-elevated);
+    }
+
+    .deck-card-inner {
+      padding: var(--space-lg);
+      padding-top: calc(var(--space-lg) - 3px);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .deck-color-bar {
+      height: 3px;
+      flex-shrink: 0;
+    }
+
+    .deck-color-bar.wr { background: linear-gradient(90deg, #f5e6b8, #fca5a5); }
+    .deck-color-bar.ur { background: linear-gradient(90deg, #93c5fd, #fca5a5); }
+    .deck-color-bar.wug { background: linear-gradient(90deg, #f5e6b8, #93c5fd, #86efac); }
+    .deck-color-bar.brg { background: linear-gradient(90deg, #a1a1aa, #fca5a5, #86efac); }
+    .deck-color-bar.r { background: #fca5a5; }
+    .deck-color-bar.br { background: linear-gradient(90deg, #a1a1aa, #fca5a5); }
+
+    .deck-name {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-heading);
+      line-height: 1.3;
+    }
+
+    .deck-meta-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .deck-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-sm);
+      padding: var(--space-sm) 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .deck-stat {
+      text-align: center;
+    }
+
+    .deck-stat-value {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text-heading);
+      line-height: 1;
+    }
+
+    .deck-stat-label {
+      font-size: 0.625rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 2px;
+    }
+
+    .deck-matchup {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    .deck-matchup.good { color: var(--green); }
+    .deck-matchup.neutral { color: var(--text-secondary); }
+    .deck-matchup.bad { color: var(--red); }
+
+    .deck-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .deck-modified {
+      font-size: 0.6875rem;
+      color: var(--text-dim);
+    }
+
+    /* ── Quick Stats Section ── */
+    .quick-stats-section {
+      margin-top: var(--space-xl);
+    }
+
+    .quick-stats-section h3 {
+      font-size: 1rem;
+      margin-bottom: var(--space-md);
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <!-- ════════════ Sidebar ════════════ -->
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-logo">
+        <div class="logo-icon">M</div>
+        <span>MTGtester</span>
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="dashboard.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          Dashboard
+        </a>
+        <a href="meta.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Meta Analysis
+        </a>
+        <a href="decks.html" class="active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="14" rx="2"/><rect x="4" y="4" width="16" height="14" rx="1" opacity="0.4"/><rect x="6" y="2" width="12" height="14" rx="1" opacity="0.2"/>
+          </svg>
+          My Decks
+        </a>
+        <a href="deck-builder.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          Deck Builder
+        </a>
+      </nav>
+
+      <div class="sidebar-user">
+        <div class="avatar">MR</div>
+        <div class="user-info">
+          <div class="user-name">Marco R.</div>
+          <div class="user-email">marco@email.com</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ════════════ Main Content ════════════ -->
+    <main class="main-content">
+
+      <!-- Header Row -->
+      <div class="header-row animate-in">
+        <div class="page-header" style="margin-bottom: 0;">
+          <h1>My Decks</h1>
+          <p>Manage your collection</p>
+        </div>
+        <div class="header-actions">
+          <a href="deck-builder.html" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            New Deck
+          </a>
+          <button class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Import
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter / Sort Bar -->
+      <div class="filter-bar animate-in animate-in-1">
+        <div class="search-input-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="search" placeholder="Search decks...">
+        </div>
+
+        <div class="tabs">
+          <button class="tab active">Last Modified</button>
+          <button class="tab">Name</button>
+          <button class="tab">Win Rate</button>
+        </div>
+
+        <div class="view-toggle">
+          <button class="active" title="Grid view">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+          </button>
+          <button title="List view">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Deck Cards Grid -->
+      <div class="grid-3">
+
+        <!-- Deck 1: Boros Energy -->
+        <a href="deck-detail.html" class="deck-card animate-in animate-in-1">
+          <div class="deck-color-bar wr"></div>
+          <div class="deck-card-inner">
+            <div class="deck-name">Boros Energy — Main</div>
+            <div class="deck-meta-row">
+              <span class="badge badge-ghost">Aggro</span>
+              <div class="color-identity">
+                <span class="color-pip W"></span>
+                <span class="color-pip R"></span>
+              </div>
+            </div>
+            <div class="deck-stats">
+              <div class="deck-stat">
+                <div class="deck-stat-value">75</div>
+                <div class="deck-stat-label">Cards</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">Modern</div>
+                <div class="deck-stat-label">Format</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">47</div>
+                <div class="deck-stat-label">Games</div>
+              </div>
+            </div>
+            <div class="deck-footer">
+              <div class="deck-matchup good">vs Meta: 56.2%</div>
+              <div class="sparkline">
+                <div class="sparkline-bar" style="height: 40%;"></div>
+                <div class="sparkline-bar" style="height: 50%;"></div>
+                <div class="sparkline-bar" style="height: 45%;"></div>
+                <div class="sparkline-bar" style="height: 60%;"></div>
+                <div class="sparkline-bar" style="height: 70%;"></div>
+                <div class="sparkline-bar" style="height: 80%;"></div>
+                <div class="sparkline-bar" style="height: 90%;"></div>
+              </div>
+            </div>
+            <div class="deck-modified">Modified 2 hours ago</div>
+          </div>
+        </a>
+
+        <!-- Deck 2: Murktide -->
+        <a href="deck-detail.html" class="deck-card animate-in animate-in-2">
+          <div class="deck-color-bar ur"></div>
+          <div class="deck-card-inner">
+            <div class="deck-name">Murktide — RCQ Build</div>
+            <div class="deck-meta-row">
+              <span class="badge badge-ghost">Tempo</span>
+              <div class="color-identity">
+                <span class="color-pip U"></span>
+                <span class="color-pip R"></span>
+              </div>
+            </div>
+            <div class="deck-stats">
+              <div class="deck-stat">
+                <div class="deck-stat-value">75</div>
+                <div class="deck-stat-label">Cards</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">Modern</div>
+                <div class="deck-stat-label">Format</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">32</div>
+                <div class="deck-stat-label">Games</div>
+              </div>
+            </div>
+            <div class="deck-footer">
+              <div class="deck-matchup good">vs Meta: 54.8%</div>
+              <div class="sparkline">
+                <div class="sparkline-bar" style="height: 55%;"></div>
+                <div class="sparkline-bar" style="height: 60%;"></div>
+                <div class="sparkline-bar" style="height: 55%;"></div>
+                <div class="sparkline-bar" style="height: 58%;"></div>
+                <div class="sparkline-bar" style="height: 56%;"></div>
+                <div class="sparkline-bar" style="height: 57%;"></div>
+                <div class="sparkline-bar" style="height: 55%;"></div>
+              </div>
+            </div>
+            <div class="deck-modified">Modified 1 day ago</div>
+          </div>
+        </a>
+
+        <!-- Deck 3: Nadu Combo -->
+        <a href="deck-detail.html" class="deck-card animate-in animate-in-3">
+          <div class="deck-color-bar wug"></div>
+          <div class="deck-card-inner">
+            <div class="deck-name">Nadu Combo — Testing</div>
+            <div class="deck-meta-row">
+              <span class="badge badge-ghost">Combo</span>
+              <div class="color-identity">
+                <span class="color-pip W"></span>
+                <span class="color-pip U"></span>
+                <span class="color-pip G"></span>
+              </div>
+            </div>
+            <div class="deck-stats">
+              <div class="deck-stat">
+                <div class="deck-stat-value">75</div>
+                <div class="deck-stat-label">Cards</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">Modern</div>
+                <div class="deck-stat-label">Format</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">12</div>
+                <div class="deck-stat-label">Games</div>
+              </div>
+            </div>
+            <div class="deck-footer">
+              <div class="deck-matchup good">vs Meta: 61.3%</div>
+              <div class="sparkline">
+                <div class="sparkline-bar" style="height: 70%;"></div>
+                <div class="sparkline-bar" style="height: 75%;"></div>
+                <div class="sparkline-bar" style="height: 80%;"></div>
+                <div class="sparkline-bar" style="height: 85%;"></div>
+                <div class="sparkline-bar" style="height: 88%;"></div>
+                <div class="sparkline-bar" style="height: 90%;"></div>
+                <div class="sparkline-bar" style="height: 95%;"></div>
+              </div>
+            </div>
+            <div class="deck-modified">Modified 3 days ago</div>
+          </div>
+        </a>
+
+        <!-- Deck 4: Living End -->
+        <a href="deck-detail.html" class="deck-card animate-in animate-in-4">
+          <div class="deck-color-bar brg"></div>
+          <div class="deck-card-inner">
+            <div class="deck-name">Living End — Anti-Meta</div>
+            <div class="deck-meta-row">
+              <span class="badge badge-ghost">Combo</span>
+              <div class="color-identity">
+                <span class="color-pip B"></span>
+                <span class="color-pip R"></span>
+                <span class="color-pip G"></span>
+              </div>
+            </div>
+            <div class="deck-stats">
+              <div class="deck-stat">
+                <div class="deck-stat-value">75</div>
+                <div class="deck-stat-label">Cards</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">Modern</div>
+                <div class="deck-stat-label">Format</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">28</div>
+                <div class="deck-stat-label">Games</div>
+              </div>
+            </div>
+            <div class="deck-footer">
+              <div class="deck-matchup bad">vs Meta: 49.1%</div>
+              <div class="sparkline">
+                <div class="sparkline-bar" style="height: 65%;"></div>
+                <div class="sparkline-bar" style="height: 60%;"></div>
+                <div class="sparkline-bar" style="height: 55%;"></div>
+                <div class="sparkline-bar" style="height: 50%;"></div>
+                <div class="sparkline-bar" style="height: 45%;"></div>
+                <div class="sparkline-bar" style="height: 42%;"></div>
+                <div class="sparkline-bar" style="height: 38%;"></div>
+              </div>
+            </div>
+            <div class="deck-modified">Modified 5 days ago</div>
+          </div>
+        </a>
+
+        <!-- Deck 5: Burn -->
+        <a href="deck-detail.html" class="deck-card animate-in animate-in-5">
+          <div class="deck-color-bar r"></div>
+          <div class="deck-card-inner">
+            <div class="deck-name">Burn — Budget</div>
+            <div class="deck-meta-row">
+              <span class="badge badge-ghost">Aggro</span>
+              <div class="color-identity">
+                <span class="color-pip R"></span>
+              </div>
+            </div>
+            <div class="deck-stats">
+              <div class="deck-stat">
+                <div class="deck-stat-value">75</div>
+                <div class="deck-stat-label">Cards</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">Modern</div>
+                <div class="deck-stat-label">Format</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">65</div>
+                <div class="deck-stat-label">Games</div>
+              </div>
+            </div>
+            <div class="deck-footer">
+              <div class="deck-matchup bad">vs Meta: 48.7%</div>
+              <div class="sparkline">
+                <div class="sparkline-bar" style="height: 50%;"></div>
+                <div class="sparkline-bar" style="height: 48%;"></div>
+                <div class="sparkline-bar" style="height: 50%;"></div>
+                <div class="sparkline-bar" style="height: 52%;"></div>
+                <div class="sparkline-bar" style="height: 49%;"></div>
+                <div class="sparkline-bar" style="height: 50%;"></div>
+                <div class="sparkline-bar" style="height: 51%;"></div>
+              </div>
+            </div>
+            <div class="deck-modified">Modified 1 week ago</div>
+          </div>
+        </a>
+
+        <!-- Deck 6: Goryo's Vengeance -->
+        <a href="deck-detail.html" class="deck-card animate-in animate-in-6">
+          <div class="deck-color-bar br"></div>
+          <div class="deck-card-inner">
+            <div class="deck-name">Goryo's Vengeance — Spicy</div>
+            <div class="deck-meta-row">
+              <span class="badge badge-ghost">Combo</span>
+              <div class="color-identity">
+                <span class="color-pip B"></span>
+                <span class="color-pip R"></span>
+              </div>
+            </div>
+            <div class="deck-stats">
+              <div class="deck-stat">
+                <div class="deck-stat-value">75</div>
+                <div class="deck-stat-label">Cards</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">Modern</div>
+                <div class="deck-stat-label">Format</div>
+              </div>
+              <div class="deck-stat">
+                <div class="deck-stat-value">8</div>
+                <div class="deck-stat-label">Games</div>
+              </div>
+            </div>
+            <div class="deck-footer">
+              <div class="deck-matchup good">vs Meta: 53.4%</div>
+              <div class="sparkline">
+                <div class="sparkline-bar" style="height: 40%;"></div>
+                <div class="sparkline-bar" style="height: 80%;"></div>
+                <div class="sparkline-bar" style="height: 30%;"></div>
+                <div class="sparkline-bar" style="height: 70%;"></div>
+                <div class="sparkline-bar" style="height: 25%;"></div>
+                <div class="sparkline-bar" style="height: 85%;"></div>
+                <div class="sparkline-bar" style="height: 55%;"></div>
+              </div>
+            </div>
+            <div class="deck-modified">Modified 2 weeks ago</div>
+          </div>
+        </a>
+
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="quick-stats-section animate-in animate-in-7">
+        <h3>Quick Stats</h3>
+        <div class="grid-3">
+          <div class="stat-card cyan">
+            <div class="stat-label">Total Decks</div>
+            <div class="stat-value">6</div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-label">Total Games</div>
+            <div class="stat-value">192</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Best Performer</div>
+            <div class="stat-value" style="font-size: 1.25rem;">Nadu Combo</div>
+            <div class="stat-change up">61.3% win rate</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+</body>
+</html>

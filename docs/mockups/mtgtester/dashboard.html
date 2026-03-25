@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — MTGtester</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    /* ── Dashboard-specific styles (Light Pastel) ── */
+
+    .split-layout {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: var(--space-md);
+    }
+
+    /* ── Horizontal Bar Chart ── */
+    .h-bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .h-bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 52px;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .h-bar-name {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .h-bar-track {
+      height: 22px;
+      background: var(--bg-muted);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .h-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s var(--ease-out);
+    }
+
+    .h-bar-value {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: right;
+    }
+
+    /* Bar color themes — soft pastel mana colors */
+    .h-bar-fill.boros     { background: linear-gradient(90deg, #fca5a5, #fde68a); }
+    .h-bar-fill.nadu      { background: linear-gradient(90deg, #86efac, #93c5fd); }
+    .h-bar-fill.goryos    { background: linear-gradient(90deg, #d4d4d8, #fca5a5); }
+    .h-bar-fill.murktide   { background: linear-gradient(90deg, #93c5fd, #fca5a5); }
+    .h-bar-fill.living-end { background: linear-gradient(90deg, #d4d4d8, #fca5a5, #86efac); }
+    .h-bar-fill.amulet     { background: linear-gradient(90deg, #86efac, #d4d4d8); }
+    .h-bar-fill.yawgmoth   { background: linear-gradient(90deg, #d4d4d8, #86efac); }
+    .h-bar-fill.tron       { background: linear-gradient(90deg, #cbd5e1, #e2e8f0); }
+
+    /* ── Prediction List ── */
+    .prediction-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .prediction-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .prediction-item:last-child {
+      border-bottom: none;
+    }
+
+    .prediction-item .deck-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .prediction-section-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: var(--space-md) 0 var(--space-xs);
+    }
+
+    .prediction-section-label.rising-label  { color: var(--green); }
+    .prediction-section-label.falling-label { color: var(--red); }
+    .prediction-section-label.stable-label  { color: var(--text-dim); }
+
+    /* ── Deck Cards ── */
+    .deck-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      transition: all var(--transition-normal);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .deck-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-card);
+      transform: translateY(-2px);
+    }
+
+    .deck-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-sm);
+    }
+
+    .deck-card-name {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-heading);
+    }
+
+    .deck-card-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: var(--space-sm);
+    }
+
+    .deck-card-matchup {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      margin-top: var(--space-md);
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--border);
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .deck-card-matchup .matchup-value {
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .deck-card-matchup .matchup-value.good   { color: var(--green); }
+    .deck-card-matchup .matchup-value.ok     { color: var(--gold); }
+    .deck-card-matchup .matchup-value.bad    { color: var(--red); }
+
+    /* ── Section Title ── */
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-heading);
+      margin-bottom: var(--space-md);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+
+    <!-- ════════════ Sidebar ════════════ -->
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-logo">
+        <div class="logo-icon">M</div>
+        <span>MTGtester</span>
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          Dashboard
+        </a>
+        <a href="meta.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Meta Analysis
+        </a>
+        <a href="decks.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="14" rx="2"/><rect x="4" y="4" width="16" height="14" rx="1" opacity="0.4"/><rect x="6" y="2" width="12" height="14" rx="1" opacity="0.2"/>
+          </svg>
+          My Decks
+        </a>
+        <a href="deck-builder.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          Deck Builder
+        </a>
+      </nav>
+
+      <div class="sidebar-user">
+        <div class="avatar">MR</div>
+        <div class="user-info">
+          <div class="user-name">Marco R.</div>
+          <div class="user-email">marco@email.com</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ════════════ Main Content ════════════ -->
+    <main class="main-content">
+
+      <!-- Page Header -->
+      <div class="page-header animate-in">
+        <h1>Dashboard</h1>
+        <p>Your competitive edge at a glance</p>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="grid-4 mb-lg">
+        <div class="stat-card cyan animate-in animate-in-1">
+          <div class="stat-label">Meta Decks Tracked</div>
+          <div class="stat-value font-mono">47</div>
+        </div>
+        <div class="stat-card gold animate-in animate-in-2">
+          <div class="stat-label">Predicted Shift</div>
+          <div class="stat-value font-mono">3</div>
+          <div class="stat-change up">decks rising</div>
+        </div>
+        <div class="stat-card green animate-in animate-in-3">
+          <div class="stat-label">Your Decks</div>
+          <div class="stat-value font-mono">5</div>
+        </div>
+        <div class="stat-card cyan animate-in animate-in-4">
+          <div class="stat-label">Avg. Win Rate</div>
+          <div class="stat-value font-mono">58.3%</div>
+        </div>
+      </div>
+
+      <!-- Two-Column: Chart + Predictions -->
+      <div class="split-layout mb-lg">
+
+        <!-- Left: Meta Snapshot -->
+        <div class="chart-container animate-in animate-in-5">
+          <div class="chart-header">
+            <div class="chart-title">Meta Snapshot</div>
+            <span class="badge badge-cyan">Modern</span>
+          </div>
+          <div class="h-bar-chart">
+            <div class="h-bar-row">
+              <span class="h-bar-name">Boros Energy</span>
+              <div class="h-bar-track"><div class="h-bar-fill boros" style="width:100%"></div></div>
+              <span class="h-bar-value font-mono">14.2%</span>
+            </div>
+            <div class="h-bar-row">
+              <span class="h-bar-name">Nadu Combo</span>
+              <div class="h-bar-track"><div class="h-bar-fill nadu" style="width:83%"></div></div>
+              <span class="h-bar-value font-mono">11.8%</span>
+            </div>
+            <div class="h-bar-row">
+              <span class="h-bar-name">Goryo's Vengeance</span>
+              <div class="h-bar-track"><div class="h-bar-fill goryos" style="width:60%"></div></div>
+              <span class="h-bar-value font-mono">8.5%</span>
+            </div>
+            <div class="h-bar-row">
+              <span class="h-bar-name">Murktide Regent</span>
+              <div class="h-bar-track"><div class="h-bar-fill murktide" style="width:51%"></div></div>
+              <span class="h-bar-value font-mono">7.2%</span>
+            </div>
+            <div class="h-bar-row">
+              <span class="h-bar-name">Living End</span>
+              <div class="h-bar-track"><div class="h-bar-fill living-end" style="width:49%"></div></div>
+              <span class="h-bar-value font-mono">6.9%</span>
+            </div>
+            <div class="h-bar-row">
+              <span class="h-bar-name">Amulet Titan</span>
+              <div class="h-bar-track"><div class="h-bar-fill amulet" style="width:38%"></div></div>
+              <span class="h-bar-value font-mono">5.4%</span>
+            </div>
+            <div class="h-bar-row">
+              <span class="h-bar-name">Yawgmoth Combo</span>
+              <div class="h-bar-track"><div class="h-bar-fill yawgmoth" style="width:36%"></div></div>
+              <span class="h-bar-value font-mono">5.1%</span>
+            </div>
+            <div class="h-bar-row">
+              <span class="h-bar-name">Tron</span>
+              <div class="h-bar-track"><div class="h-bar-fill tron" style="width:34%"></div></div>
+              <span class="h-bar-value font-mono">4.8%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Predictions -->
+        <div class="card animate-in animate-in-6">
+          <div class="card-header">
+            <span class="card-title">Predictions</span>
+            <span class="badge badge-gold">AI</span>
+          </div>
+          <div class="prediction-list">
+
+            <div class="prediction-section-label rising-label">Rising</div>
+            <div class="prediction-item">
+              <span class="deck-name">Nadu Combo</span>
+              <span class="prediction rising"><span class="prediction-arrow">&#8593;</span> <span class="font-mono">+2.3%</span></span>
+            </div>
+            <div class="prediction-item">
+              <span class="deck-name">Living End</span>
+              <span class="prediction rising"><span class="prediction-arrow">&#8593;</span> <span class="font-mono">+1.1%</span></span>
+            </div>
+            <div class="prediction-item">
+              <span class="deck-name">Yawgmoth</span>
+              <span class="prediction rising"><span class="prediction-arrow">&#8593;</span> <span class="font-mono">+0.8%</span></span>
+            </div>
+
+            <div class="prediction-section-label falling-label">Falling</div>
+            <div class="prediction-item">
+              <span class="deck-name">Murktide</span>
+              <span class="prediction falling"><span class="prediction-arrow">&#8595;</span> <span class="font-mono">-1.5%</span></span>
+            </div>
+            <div class="prediction-item">
+              <span class="deck-name">Tron</span>
+              <span class="prediction falling"><span class="prediction-arrow">&#8595;</span> <span class="font-mono">-0.9%</span></span>
+            </div>
+
+            <div class="prediction-section-label stable-label">Stable</div>
+            <div class="prediction-item">
+              <span class="deck-name">Boros Energy</span>
+              <span class="prediction stable"><span class="prediction-arrow">&#8594;</span> <span class="font-mono">0.0%</span></span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Your Decks Section -->
+      <div class="animate-in animate-in-7">
+        <div class="section-title">Your Decks</div>
+        <div class="grid-3">
+
+          <div class="deck-card animate-in animate-in-5">
+            <div class="deck-card-header">
+              <span class="deck-card-name">Boros Energy (Main)</span>
+              <div class="color-identity">
+                <span class="color-pip R"></span>
+                <span class="color-pip W"></span>
+              </div>
+            </div>
+            <div class="deck-card-meta">
+              <span class="font-mono">60 cards</span>
+              <span>Edited 2 days ago</span>
+            </div>
+            <div class="deck-card-matchup">
+              <span>vs Meta:</span>
+              <span class="matchup-value good font-mono">56.2%</span>
+            </div>
+          </div>
+
+          <div class="deck-card animate-in animate-in-6">
+            <div class="deck-card-header">
+              <span class="deck-card-name">Murktide Sideboard Lab</span>
+              <div class="color-identity">
+                <span class="color-pip U"></span>
+                <span class="color-pip R"></span>
+              </div>
+            </div>
+            <div class="deck-card-meta">
+              <span class="font-mono">75 cards</span>
+              <span>Edited 5 days ago</span>
+            </div>
+            <div class="deck-card-matchup">
+              <span>vs Meta:</span>
+              <span class="matchup-value ok font-mono">49.8%</span>
+            </div>
+          </div>
+
+          <div class="deck-card animate-in animate-in-7">
+            <div class="deck-card-header">
+              <span class="deck-card-name">Nadu Combo Test</span>
+              <div class="color-identity">
+                <span class="color-pip G"></span>
+                <span class="color-pip U"></span>
+              </div>
+            </div>
+            <div class="deck-card-meta">
+              <span class="font-mono">60 cards</span>
+              <span>Edited today</span>
+            </div>
+            <div class="deck-card-matchup">
+              <span>vs Meta:</span>
+              <span class="matchup-value good font-mono">61.4%</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+</body>
+</html>

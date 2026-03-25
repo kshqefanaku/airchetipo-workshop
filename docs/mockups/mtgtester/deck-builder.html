@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deck Builder — MTGtester</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    /* ── Deck Builder specific styles (Light Pastel) ── */
+
+    .main-content {
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      background: var(--bg-deep);
+    }
+
+    /* ── Top Bar ── */
+    .deck-topbar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding-bottom: var(--space-md);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: var(--space-md);
+      flex-wrap: wrap;
+    }
+
+    .deck-name-input {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-heading);
+      min-width: 280px;
+      transition: all var(--transition-fast);
+    }
+
+    .deck-name-input:hover {
+      border-color: var(--border);
+    }
+
+    .deck-name-input:focus {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-focus);
+      outline: none;
+      background: var(--bg-surface);
+    }
+
+    .deck-topbar .color-identity {
+      margin-right: auto;
+    }
+
+    .card-count {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .card-count strong {
+      color: var(--text-heading);
+      font-weight: 600;
+    }
+
+    /* ── Three Panel Layout ── */
+    .builder-panels {
+      display: grid;
+      grid-template-columns: 300px 1fr 320px;
+      gap: 0;
+      flex: 1;
+      min-height: 0;
+      max-height: calc(100vh - 100px);
+    }
+
+    .panel {
+      overflow-y: auto;
+      padding: var(--space-md);
+      background: var(--bg-surface);
+    }
+
+    /* ── Left Panel — Card Search ── */
+    .panel-search {
+      border-right: 1px solid var(--border);
+      border-left: 3px solid var(--primary-light);
+    }
+
+    .panel-title {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text-heading);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: var(--space-md);
+    }
+
+    .filter-section {
+      margin-bottom: var(--space-md);
+    }
+
+    .filter-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-xs);
+    }
+
+    .mana-filter-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    .mana-filter-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all var(--transition-fast);
+      opacity: 0.4;
+    }
+
+    .mana-filter-btn.active {
+      opacity: 1;
+      border-color: var(--border-hover);
+      box-shadow: 0 0 0 3px rgba(79,110,247,0.1);
+    }
+
+    .mana-filter-btn.W { background: var(--mana-W); color: var(--mana-W-text); }
+    .mana-filter-btn.U { background: #dbeafe; color: var(--mana-U); }
+    .mana-filter-btn.B { background: #e4e4e7; color: var(--mana-B); }
+    .mana-filter-btn.R { background: #fee2e2; color: var(--mana-R); }
+    .mana-filter-btn.G { background: #dcfce7; color: var(--mana-G); }
+    .mana-filter-btn.C { background: #f1f5f9; color: var(--mana-C); }
+
+    /* Type filter tabs */
+    .type-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+    }
+
+    .type-tab {
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: var(--font-body);
+      transition: all var(--transition-fast);
+    }
+
+    .type-tab:hover {
+      color: var(--text-secondary);
+      background: var(--bg-muted);
+    }
+
+    .type-tab.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* CMC filter */
+    .cmc-filter {
+      display: flex;
+      gap: 2px;
+    }
+
+    .cmc-btn {
+      width: 28px;
+      height: 26px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .cmc-btn:hover {
+      color: var(--text-secondary);
+      background: var(--bg-muted);
+    }
+
+    .cmc-btn.active {
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    /* Search results */
+    .search-results {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: var(--space-sm);
+    }
+
+    .search-result-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: 1px solid transparent;
+    }
+
+    .search-result-item:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border);
+    }
+
+    .search-result-name {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-result-type {
+      font-size: 0.6875rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      grid-column: 1;
+    }
+
+    .search-result-mana {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .search-result-mana .mana-badge {
+      width: 18px;
+      height: 18px;
+      font-size: 0.6rem;
+    }
+
+    .search-result-add {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary-light);
+      color: var(--primary);
+      border: none;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 700;
+      opacity: 0;
+      transition: all var(--transition-fast);
+    }
+
+    .search-result-item:hover .search-result-add {
+      opacity: 1;
+    }
+
+    .search-result-add:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* ── Center Panel — Deck List ── */
+    .panel-decklist {
+      border-right: 1px solid var(--border);
+    }
+
+    .decklist-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-muted);
+      padding: 3px;
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .decklist-tab {
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      background: none;
+      border: none;
+      font-family: var(--font-body);
+    }
+
+    .decklist-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .decklist-tab.active {
+      background: var(--bg-surface);
+      color: var(--text-heading);
+      box-shadow: var(--shadow-sm);
+      font-weight: 600;
+    }
+
+    .category-header {
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      padding: var(--space-sm) 0;
+      margin-top: var(--space-sm);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .category-header:first-child {
+      margin-top: 0;
+    }
+
+    .category-count {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .decklist-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+      position: relative;
+    }
+
+    .decklist-item:hover {
+      background: var(--bg-muted);
+    }
+
+    .decklist-qty {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      min-width: 24px;
+    }
+
+    .decklist-cardname {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .decklist-controls {
+      display: flex;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+
+    .decklist-item:hover .decklist-controls {
+      opacity: 1;
+    }
+
+    .decklist-ctrl-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .decklist-ctrl-btn.plus {
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .decklist-ctrl-btn.plus:hover {
+      background: var(--green);
+      color: white;
+    }
+
+    .decklist-ctrl-btn.minus {
+      background: var(--red-light);
+      color: var(--red);
+    }
+
+    .decklist-ctrl-btn.minus:hover {
+      background: var(--red);
+      color: white;
+    }
+
+    /* ── Right Panel — Stats ── */
+    .panel-stats {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .stats-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+    }
+
+    .stats-section-title {
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-sm);
+    }
+
+    /* Color distribution bar */
+    .color-dist-bar {
+      display: flex;
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: var(--space-sm);
+    }
+
+    .color-dist-segment {
+      transition: width var(--transition-normal);
+    }
+
+    .color-dist-legend {
+      display: flex;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+
+    .color-dist-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.6875rem;
+      color: var(--text-secondary);
+    }
+
+    .color-dist-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* Key stats grid */
+    .key-stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--space-sm);
+    }
+
+    .key-stat {
+      text-align: center;
+    }
+
+    .key-stat-value {
+      font-family: var(--font-mono);
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-heading);
+    }
+
+    .key-stat-label {
+      font-size: 0.625rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Matchup preview */
+    .matchup-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .matchup-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      font-size: 0.8125rem;
+      border-bottom: 1px solid var(--bg-muted);
+    }
+
+    .matchup-row:last-child {
+      border-bottom: none;
+    }
+
+    .matchup-name {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .matchup-value {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 0.8125rem;
+    }
+
+    .matchup-value.favorable { color: var(--green); }
+    .matchup-value.unfavorable { color: var(--red); }
+    .matchup-value.mirror { color: var(--text-dim); font-style: italic; }
+
+    .full-analysis-link {
+      display: block;
+      margin-top: var(--space-sm);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    /* Sideboard suggestions */
+    .sb-suggestion {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      padding: 6px 0;
+      font-size: 0.8125rem;
+    }
+
+    .sb-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .sb-card {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .sb-targets {
+      font-size: 0.6875rem;
+      color: var(--text-dim);
+    }
+
+    /* Mana curve override for compact mode */
+    .mana-curve-compact {
+      height: 80px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <!-- ════════════ Sidebar ════════════ -->
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-logo">
+        <div class="logo-icon">M</div>
+        <span>MTGtester</span>
+      </a>
+
+      <nav class="sidebar-nav">
+        <a href="dashboard.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          Dashboard
+        </a>
+        <a href="meta.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Meta Analysis
+        </a>
+        <a href="decks.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="14" rx="2"/><rect x="4" y="4" width="16" height="14" rx="1" opacity="0.4"/><rect x="6" y="2" width="12" height="14" rx="1" opacity="0.2"/>
+          </svg>
+          My Decks
+        </a>
+        <a href="deck-builder.html" class="active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          Deck Builder
+        </a>
+      </nav>
+
+      <div class="sidebar-user">
+        <div class="avatar">MR</div>
+        <div class="user-info">
+          <div class="user-name">Marco R.</div>
+          <div class="user-email">marco@email.com</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ════════════ Main Content ════════════ -->
+    <main class="main-content">
+
+      <!-- ── Top Bar ── -->
+      <div class="deck-topbar animate-in">
+        <input type="text" class="deck-name-input" value="Boros Energy — Main">
+        <div class="color-identity" data-tooltip="Auto-detected colors">
+          <div class="color-pip W"></div>
+          <div class="color-pip R"></div>
+        </div>
+        <span class="card-count"><strong>60/60</strong> Main &bull; <strong>15/15</strong> Side</span>
+        <button class="btn btn-primary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save
+        </button>
+        <button class="btn btn-secondary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+      </div>
+
+      <!-- ── Three Panel Builder ── -->
+      <div class="builder-panels animate-in animate-in-1">
+
+        <!-- ═══ LEFT PANEL — Card Search ═══ -->
+        <div class="panel panel-search">
+          <div class="panel-title">Card Search</div>
+
+          <!-- Search input -->
+          <div class="search-input-wrapper" style="margin-bottom:var(--space-md)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" placeholder="Search cards...">
+          </div>
+
+          <!-- Color filter -->
+          <div class="filter-section">
+            <div class="filter-label">Color</div>
+            <div class="mana-filter-row">
+              <button class="mana-filter-btn W active">W</button>
+              <button class="mana-filter-btn U">U</button>
+              <button class="mana-filter-btn B">B</button>
+              <button class="mana-filter-btn R active">R</button>
+              <button class="mana-filter-btn G">G</button>
+              <button class="mana-filter-btn C">C</button>
+            </div>
+          </div>
+
+          <!-- Type filter -->
+          <div class="filter-section">
+            <div class="filter-label">Type</div>
+            <div class="type-filter">
+              <button class="type-tab active">All</button>
+              <button class="type-tab">Creature</button>
+              <button class="type-tab">Instant</button>
+              <button class="type-tab">Sorcery</button>
+              <button class="type-tab">Enchant.</button>
+              <button class="type-tab">Artifact</button>
+              <button class="type-tab">Land</button>
+            </div>
+          </div>
+
+          <!-- CMC filter -->
+          <div class="filter-section">
+            <div class="filter-label">CMC</div>
+            <div class="cmc-filter">
+              <button class="cmc-btn">0</button>
+              <button class="cmc-btn active">1</button>
+              <button class="cmc-btn">2</button>
+              <button class="cmc-btn">3</button>
+              <button class="cmc-btn">4</button>
+              <button class="cmc-btn">5</button>
+              <button class="cmc-btn">6</button>
+              <button class="cmc-btn">7+</button>
+            </div>
+          </div>
+
+          <!-- Search Results -->
+          <div class="search-results">
+            <!-- Ragavan -->
+            <div class="search-result-item">
+              <div>
+                <div class="search-result-name">Ragavan, Nimble Pilferer</div>
+                <div class="search-result-type">Legendary Creature</div>
+              </div>
+              <div class="search-result-mana">
+                <span class="mana-badge mana-R">R</span>
+              </div>
+              <button class="search-result-add">+</button>
+            </div>
+            <!-- Dragon's Rage Channeler -->
+            <div class="search-result-item">
+              <div>
+                <div class="search-result-name">Dragon's Rage Channeler</div>
+                <div class="search-result-type">Creature</div>
+              </div>
+              <div class="search-result-mana">
+                <span class="mana-badge mana-R">R</span>
+              </div>
+              <button class="search-result-add">+</button>
+            </div>
+            <!-- Monastery Swiftspear -->
+            <div class="search-result-item">
+              <div>
+                <div class="search-result-name">Monastery Swiftspear</div>
+                <div class="search-result-type">Creature</div>
+              </div>
+              <div class="search-result-mana">
+                <span class="mana-badge mana-R">R</span>
+              </div>
+              <button class="search-result-add">+</button>
+            </div>
+            <!-- Eidolon -->
+            <div class="search-result-item">
+              <div>
+                <div class="search-result-name">Eidolon of the Great Revel</div>
+                <div class="search-result-type">Enchantment Creature</div>
+              </div>
+              <div class="search-result-mana">
+                <span class="mana-badge mana-R">R</span>
+                <span class="mana-badge mana-R">R</span>
+              </div>
+              <button class="search-result-add">+</button>
+            </div>
+            <!-- Lightning Bolt -->
+            <div class="search-result-item">
+              <div>
+                <div class="search-result-name">Lightning Bolt</div>
+                <div class="search-result-type">Instant</div>
+              </div>
+              <div class="search-result-mana">
+                <span class="mana-badge mana-R">R</span>
+              </div>
+              <button class="search-result-add">+</button>
+            </div>
+            <!-- Galvanic Blast -->
+            <div class="search-result-item">
+              <div>
+                <div class="search-result-name">Galvanic Blast</div>
+                <div class="search-result-type">Instant</div>
+              </div>
+              <div class="search-result-mana">
+                <span class="mana-badge mana-R">R</span>
+              </div>
+              <button class="search-result-add">+</button>
+            </div>
+            <!-- Goblin Guide -->
+            <div class="search-result-item">
+              <div>
+                <div class="search-result-name">Goblin Guide</div>
+                <div class="search-result-type">Creature</div>
+              </div>
+              <div class="search-result-mana">
+                <span class="mana-badge mana-R">R</span>
+              </div>
+              <button class="search-result-add">+</button>
+            </div>
+            <!-- Fury -->
+            <div class="search-result-item">
+              <div>
+                <div class="search-result-name">Fury</div>
+                <div class="search-result-type">Elemental</div>
+              </div>
+              <div class="search-result-mana">
+                <span class="mana-badge mana-C" style="font-size:0.55rem">3</span>
+                <span class="mana-badge mana-R">R</span>
+                <span class="mana-badge mana-R">R</span>
+              </div>
+              <button class="search-result-add">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ CENTER PANEL — Deck List ═══ -->
+        <div class="panel panel-decklist">
+          <!-- Tabs -->
+          <div class="decklist-tabs">
+            <button class="decklist-tab active">Main Deck (60)</button>
+            <button class="decklist-tab">Sideboard (15)</button>
+          </div>
+
+          <!-- Creatures -->
+          <div class="category-header">
+            <span>Creatures</span>
+            <span class="category-count">26</span>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">4&times;</span>
+            <span class="decklist-cardname">Ragavan, Nimble Pilferer</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">4&times;</span>
+            <span class="decklist-cardname">Dragon's Rage Channeler</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">4&times;</span>
+            <span class="decklist-cardname">Goblin Guide</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">4&times;</span>
+            <span class="decklist-cardname">Monastery Swiftspear</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">4&times;</span>
+            <span class="decklist-cardname">Eidolon of the Great Revel</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">3&times;</span>
+            <span class="decklist-cardname">Seasoned Pyromancer</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">3&times;</span>
+            <span class="decklist-cardname">Fury</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+
+          <!-- Instants/Sorceries -->
+          <div class="category-header">
+            <span>Instants / Sorceries</span>
+            <span class="category-count">14</span>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">4&times;</span>
+            <span class="decklist-cardname">Lightning Bolt</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">4&times;</span>
+            <span class="decklist-cardname">Unholy Heat</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">3&times;</span>
+            <span class="decklist-cardname">Galvanic Blast</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">3&times;</span>
+            <span class="decklist-cardname">Mishra's Bauble</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+
+          <!-- Lands -->
+          <div class="category-header">
+            <span>Lands</span>
+            <span class="category-count">20</span>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">4&times;</span>
+            <span class="decklist-cardname">Inspiring Vantage</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">4&times;</span>
+            <span class="decklist-cardname">Sacred Foundry</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">4&times;</span>
+            <span class="decklist-cardname">Scalding Tarn</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">3&times;</span>
+            <span class="decklist-cardname">Arid Mesa</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">2&times;</span>
+            <span class="decklist-cardname">Mountain</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">2&times;</span>
+            <span class="decklist-cardname">Plains</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+          <div class="decklist-item">
+            <span class="decklist-qty font-mono">1&times;</span>
+            <span class="decklist-cardname">Eiganjo, Seat of the Empire</span>
+            <div class="decklist-controls">
+              <button class="decklist-ctrl-btn minus">&minus;</button>
+              <button class="decklist-ctrl-btn plus">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ RIGHT PANEL — Deck Stats ═══ -->
+        <div class="panel panel-stats">
+
+          <!-- Mana Curve -->
+          <div class="stats-section animate-in animate-in-2">
+            <div class="stats-section-title">Mana Curve</div>
+            <div class="mana-curve mana-curve-compact">
+              <div class="mana-curve-bar" style="height:18.75%">
+                <span class="curve-count">3</span>
+                <span class="curve-label">0</span>
+              </div>
+              <div class="mana-curve-bar" style="height:100%">
+                <span class="curve-count">16</span>
+                <span class="curve-label">1</span>
+              </div>
+              <div class="mana-curve-bar" style="height:50%">
+                <span class="curve-count">8</span>
+                <span class="curve-label">2</span>
+              </div>
+              <div class="mana-curve-bar" style="height:37.5%">
+                <span class="curve-count">6</span>
+                <span class="curve-label">3</span>
+              </div>
+              <div class="mana-curve-bar" style="height:0%;min-height:2px">
+                <span class="curve-count">0</span>
+                <span class="curve-label">4</span>
+              </div>
+              <div class="mana-curve-bar" style="height:18.75%">
+                <span class="curve-count">3</span>
+                <span class="curve-label">5</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Color Distribution -->
+          <div class="stats-section animate-in animate-in-3">
+            <div class="stats-section-title">Color Distribution</div>
+            <div class="color-dist-bar">
+              <div class="color-dist-segment" style="width:72%;background:var(--mana-R)"></div>
+              <div class="color-dist-segment" style="width:18%;background:var(--mana-W)"></div>
+              <div class="color-dist-segment" style="width:10%;background:var(--mana-C)"></div>
+            </div>
+            <div class="color-dist-legend">
+              <span class="color-dist-label"><span class="color-dist-dot" style="background:var(--mana-R)"></span> Red 72%</span>
+              <span class="color-dist-label"><span class="color-dist-dot" style="background:var(--mana-W)"></span> White 18%</span>
+              <span class="color-dist-label"><span class="color-dist-dot" style="background:var(--mana-C)"></span> Colorless 10%</span>
+            </div>
+          </div>
+
+          <!-- Key Stats -->
+          <div class="stats-section animate-in animate-in-4">
+            <div class="stats-section-title">Key Stats</div>
+            <div class="key-stats-grid">
+              <div class="key-stat">
+                <div class="key-stat-value">1.62</div>
+                <div class="key-stat-label">Avg CMC</div>
+              </div>
+              <div class="key-stat">
+                <div class="key-stat-value">33.3%</div>
+                <div class="key-stat-label">Land %</div>
+              </div>
+              <div class="key-stat">
+                <div class="key-stat-value">43.3%</div>
+                <div class="key-stat-label">Creature %</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- vs Meta Matchup Preview -->
+          <div class="stats-section animate-in animate-in-5">
+            <div class="stats-section-title">vs Meta</div>
+            <div class="matchup-list">
+              <div class="matchup-row">
+                <span class="matchup-name">vs Boros Energy</span>
+                <span class="matchup-value mirror">Mirror</span>
+              </div>
+              <div class="matchup-row">
+                <span class="matchup-name">vs Nadu Combo</span>
+                <span class="matchup-value unfavorable">48.2%</span>
+              </div>
+              <div class="matchup-row">
+                <span class="matchup-name">vs Goryo's</span>
+                <span class="matchup-value favorable">61.3%</span>
+              </div>
+              <div class="matchup-row">
+                <span class="matchup-name">vs Murktide</span>
+                <span class="matchup-value favorable">55.1%</span>
+              </div>
+              <div class="matchup-row">
+                <span class="matchup-name">vs Living End</span>
+                <span class="matchup-value unfavorable">43.7%</span>
+              </div>
+            </div>
+            <a href="deck-detail.html" class="full-analysis-link">Full Analysis &rarr;</a>
+          </div>
+
+          <!-- Sideboard Suggestions -->
+          <div class="stats-section animate-in animate-in-6">
+            <div class="stats-section-title">Sideboard Suggestions</div>
+            <p class="text-xs text-dim" style="margin-bottom:var(--space-sm)">Based on your worst matchups:</p>
+            <div class="sb-suggestion">
+              <span class="sb-badge">+</span>
+              <div>
+                <div class="sb-card">+2 Rest in Peace</div>
+                <div class="sb-targets">vs Nadu, Living End</div>
+              </div>
+            </div>
+            <div class="sb-suggestion">
+              <span class="sb-badge">+</span>
+              <div>
+                <div class="sb-card">+2 Wear // Tear</div>
+                <div class="sb-targets">vs Nadu, Amulet</div>
+              </div>
+            </div>
+            <div class="sb-suggestion">
+              <span class="sb-badge">+</span>
+              <div>
+                <div class="sb-card">+1 Grafdigger's Cage</div>
+                <div class="sb-targets">vs Goryo's, Yawg</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+</body>
+</html>
